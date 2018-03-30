@@ -45,5 +45,7 @@
 #include "FlutterPlugin.h"
 #include "FlutterTexture.h"
 #include "FlutterViewController.h"
+#include "FlutterFishBinaryMessenger.h"
+#include "FlutterFishHeadlessDartRunner.h"
 
 #endif  // FLUTTER_FLUTTER_H_
