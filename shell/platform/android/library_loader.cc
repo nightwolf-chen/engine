@@ -5,6 +5,7 @@
 #include "flutter/fml/platform/android/jni_util.h"
 #include "flutter/shell/platform/android/flutter_main.h"
 #include "flutter/shell/platform/android/platform_view_android.h"
+#include "flutter/shell/platform/android/platform_null_view_android.h"
 #include "flutter/shell/platform/android/vsync_waiter_android.h"
 
 // This is called by the VM when the shared library is first loaded.
@@ -20,8 +21,12 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
   FXL_CHECK(result);
 
   // Register PlatformView
-  result = shell::PlatformViewAndroid::Register(env);
-  FXL_CHECK(result);
+//  result = shell::PlatformViewAndroid::Register(env);
+//  FXL_CHECK(result);
+    
+    // Register null PlatformView
+    result = shell::PlatformNullViewAndroid::Register(env);
+    FXL_CHECK(result);
 
   // Register VSyncWaiter.
   result = shell::VsyncWaiterAndroid::Register(env);
