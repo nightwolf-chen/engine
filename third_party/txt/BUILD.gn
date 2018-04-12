@@ -123,6 +123,7 @@ source_set("txt") {
   ]
 
   deps = [
+    "//flutter/fml:fml",
     "//third_party/skia:effects",
   ]
 }
