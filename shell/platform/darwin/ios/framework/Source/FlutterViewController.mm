@@ -28,6 +28,11 @@
 
 namespace {
 
+typedef enum {
+  View_Status_Disappear = 0,
+  View_Status_Appear,
+} View_Status;
+
 typedef void (^PlatformMessageResponseCallback)(NSData*);
 
 class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
@@ -80,6 +85,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   int64_t _nextTextureId;
   BOOL _initialized;
   BOOL _connected;
+  View_Status _viewStatus;
 }
 
 + (void)initialize {
@@ -339,8 +345,11 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   [self connectToEngineAndLoad];
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
-  if (_viewportMetrics.physical_width)
+  if (_viewportMetrics.physical_width && _viewStatus == View_Status_Disappear) {
     [self surfaceUpdated:YES];
+    _viewStatus = View_Status_Appear;
+  }
+    
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
 
   [super viewWillAppear:animated];
@@ -365,7 +374,11 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
-  [self surfaceUpdated:NO];
+  if (_viewStatus == View_Status_Appear) {
+    [self surfaceUpdated:NO];
+    _viewStatus = View_Status_Disappear;
+  }
+    
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
 
   [super viewDidDisappear:animated];
