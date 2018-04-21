@@ -29,9 +29,10 @@
 namespace {
 
 typedef enum {
-  View_Status_Disappear = 0,
-  View_Status_Appear,
-} View_Status;
+    PlatformView_Status_Initial = 0,
+    PlatformView_Status_Created = 1,
+    PlatformView_Status_Destoryed = 2,
+} PlatformView_Status;
 
 typedef void (^PlatformMessageResponseCallback)(NSData*);
 
@@ -85,7 +86,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   int64_t _nextTextureId;
   BOOL _initialized;
   BOOL _connected;
-  View_Status _viewStatus;
+  PlatformView_Status _platformViewStatus;
 }
 
 + (void)initialize {
@@ -102,6 +103,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
 
   if (self) {
+    _platformViewStatus = PlatformView_Status_Initial;
     if (project == nil)
       _dartProject.reset([[FlutterDartProject alloc] initFromDefaultSourceForConfiguration]);
     else
@@ -332,9 +334,15 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
   if (appeared) {
-    _platformView->NotifyCreated();
+    if(_platformViewStatus != PlatformView_Status_Created){
+        _platformView->NotifyCreated();
+        _platformViewStatus = PlatformView_Status_Created;
+    }
   } else {
-    _platformView->NotifyDestroyed();
+    if(_platformViewStatus == PlatformView_Status_Created){
+        _platformView->NotifyDestroyed();
+        _platformViewStatus = PlatformView_Status_Destoryed;
+    }
   }
 }
 
@@ -345,9 +353,8 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
   [self connectToEngineAndLoad];
   // Only recreate surface on subsequent appearances when viewport metrics are known.
   // First time surface creation is done on viewDidLayoutSubviews.
-  if (_viewportMetrics.physical_width && _viewStatus == View_Status_Disappear) {
+  if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
-    _viewStatus = View_Status_Appear;
   }
     
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
@@ -374,10 +381,7 @@ class PlatformMessageResponseDarwin : public blink::PlatformMessageResponse {
 
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
-  if (_viewStatus == View_Status_Appear) {
-    [self surfaceUpdated:NO];
-    _viewStatus = View_Status_Disappear;
-  }
+  [self surfaceUpdated:NO];
     
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
 
