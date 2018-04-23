@@ -709,15 +709,21 @@ void PlatformViewAndroid::GetBitmapGpuTask(jobject* pixels_out,
     return;
 
   JNIEnv* env = fml::jni::AttachCurrentThread();
-  FXL_CHECK(env);
+  if (env == nullptr) {
+    return;
+  }
 
   const SkISize& frame_size = layer_tree->frame_size();
   jsize pixels_size = frame_size.width() * frame_size.height();
   jintArray pixels_array = env->NewIntArray(pixels_size);
-  FXL_CHECK(pixels_array);
+  if (pixels_array == nullptr) {
+    return;
+  }
 
   jint* pixels = env->GetIntArrayElements(pixels_array, nullptr);
-  FXL_CHECK(pixels);
+  if (pixels == nullptr) {
+    return;
+  }
 
   SkImageInfo image_info =
       SkImageInfo::Make(frame_size.width(), frame_size.height(),
