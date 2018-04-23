@@ -21,12 +21,6 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
- private:
-  explicit PlatformMessageResponseDarwin(PlatformMessageResponseCallback callback)
-      : callback_(callback, fml::OwnershipPolicy::Retain) {}
-
-  fml::ScopedBlock<PlatformMessageResponseCallback> callback_;
-};
 
 
 @interface FlutterViewController () <FlutterTextInputDelegate>
