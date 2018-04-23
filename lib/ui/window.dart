@@ -47,10 +47,14 @@ enum AppLifecycleState {
   /// in the foreground inactive state. Apps transition to this state when in
   /// a phone call, responding to a TouchID request, when entering the app
   /// switcher or the control center, or when the UIViewController hosting the
-  /// Flutter app is transitioning. Apps in this state should assume that they
-  /// may be [paused] at any time.
+  /// Flutter app is transitioning.
   ///
-  /// On Android, this state is currently unused.
+  /// On Android, this corresponds to an app or the Flutter host view running
+  /// in the foreground inactive state.  Apps transition to this state when
+  /// another activity is focused, such as a split-screen app, a phone call,
+  /// a picture-in-picture app, a system dialog, or another window.
+  /// 
+  /// Apps in this state should assume that they may be [paused] at any time.
   inactive,
 
   /// The application is not currently visible to the user, not responding to
@@ -552,8 +556,36 @@ class Window {
     _onPointerDataPacketZone = Zone.current;
   }
 
-  /// The route or path that the operating system requested when the application
-  /// was launched.
+  /// The route or path that the embedder requested when the application was
+  /// launched.
+  ///
+  /// This will be the string "`/`" if no particular route was requested.
+  ///
+  /// ## Android
+  ///
+  /// On Android, calling
+  /// [`FlutterView.setInitialRoute`](/javadoc/io/flutter/view/FlutterView.html#setInitialRoute-java.lang.String-)
+  /// will set this value. The value must be set sufficiently early, i.e. before
+  /// the [runApp] call is executed in Dart, for this to have any effect on the
+  /// framework. The `createFlutterView` method in your `FlutterActivity`
+  /// subclass is a suitable time to set the value. The application's
+  /// `AndroidManifest.xml` file must also be updated to have a suitable
+  /// [`<intent-filter>`](https://developer.android.com/guide/topics/manifest/intent-filter-element.html).
+  ///
+  /// ## iOS
+  ///
+  /// On iOS, calling
+  /// [`FlutterViewController.setInitialRoute`](/objcdoc/Classes/FlutterViewController.html#/c:objc%28cs%29FlutterViewController%28im%29setInitialRoute:)
+  /// will set this value. The value must be set sufficiently early, i.e. before
+  /// the [runApp] call is executed in Dart, for this to have any effect on the
+  /// framework. The `application:didFinishLaunchingWithOptions:` method is a
+  /// suitable time to set this value.
+  ///
+  /// See also:
+  ///
+  ///  * [Navigator], a widget that handles routing.
+  ///  * [SystemChannels.navigation], which handles subsequent navigation
+  ///    requests from the embedder.
   String get defaultRouteName => _defaultRouteName();
   String _defaultRouteName() native 'Window_defaultRouteName';
 
