@@ -24,6 +24,8 @@ _flutter_framework_headers = [
   "framework/Headers/FlutterPlugin.h",
   "framework/Headers/FlutterTexture.h",
   "framework/Headers/FlutterViewController.h",
+  "framework/Headers/FlutterRuntimeController.h",
+  "framework/Headers/FlutterDartController.h",
 ]
 
 _flutter_framework_headers_copy_dir = "$_flutter_framework_dir/Headers"
@@ -65,6 +67,10 @@ shared_library("create_flutter_framework_dylib") {
     "framework/Source/platform_message_router.mm",
     "framework/Source/vsync_waiter_ios.h",
     "framework/Source/vsync_waiter_ios.mm",
+    "framework/Source/FlutterRuntimeController_Internal.h",
+    "framework/Source/FlutterDartController_Internal.h",
+    "framework/Source/FlutterRuntimeController.mm",
+    "framework/Source/FlutterDartController.mm",
     "ios_external_texture_gl.h",
     "ios_external_texture_gl.mm",
     "ios_gl_context.h",
