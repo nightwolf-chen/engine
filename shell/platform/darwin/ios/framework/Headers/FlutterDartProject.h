@@ -23,6 +23,9 @@ FLUTTER_EXPORT
 
 - (instancetype)initFromDefaultSourceForConfiguration;
 
+- (instancetype)initWithFlutterAppBundle:(NSBundle *)appBundle NS_DESIGNATED_INITIALIZER;
+
+
 /**
  Returns the file name for the given asset.
  The returned file name can be used to access the asset in the application's main bundle.

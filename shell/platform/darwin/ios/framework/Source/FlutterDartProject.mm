@@ -150,6 +150,80 @@ static blink::Settings DefaultSettingsForProcess() {
   return self;
 }
 
+- (instancetype)initWithFlutterAppBundle:(NSBundle *)appBundle
+{
+    if (self = [super init]) {
+        
+        NSString *excPath = [appBundle pathForResource:@"App" ofType:@"framework" inDirectory:@"Flutter"];
+        NSBundle *excBundle = [NSBundle bundleWithPath:excPath];
+        NSString *assetsPath = [appBundle pathForResource:@"flutter_assets" ofType:@"" inDirectory:@"Flutter"];
+
+        _settings = DefaultSettingsForProcess();
+        _precompiledDartBundle.reset([excBundle retain]);
+        if (appBundle != nil) {
+            NSString* executablePath = _precompiledDartBundle.get().executablePath;
+            if ([[NSFileManager defaultManager] fileExistsAtPath:executablePath]) {
+                _settings.application_library_path = executablePath.UTF8String;
+#if DEBUG
+                NSLog(@"executablePath.UTF8String:%@",executablePath.UTF8String);
+#endif
+            }
+        }
+
+        if (assetsPath.length > 0) {
+            _settings.assets_path = assetsPath.UTF8String;
+            
+            if (!blink::DartVM::IsRunningPrecompiledCode()) {
+                // Looking for the various script and kernel snapshot buffers only makes sense if we have a
+                // VM that can use these buffers.
+                {
+                    // Check if there is a script snapshot in the assets directory we could potentially use.
+                    NSURL* scriptSnapshotURL = [NSURL URLWithString:@(kScriptSnapshotFileName)
+                                                      relativeToURL:[NSURL fileURLWithPath:assetsPath]];
+                    if ([[NSFileManager defaultManager] fileExistsAtPath:scriptSnapshotURL.path]) {
+                        _settings.script_snapshot_path = scriptSnapshotURL.path.UTF8String;
+#if DEBUG
+                        NSLog(@"scriptSnapshotURL:%@",scriptSnapshotURL.path.UTF8String);
+#endif
+                    }
+                }
+                
+                {
+                    // Check if there is a VM kernel snapshot in the assets directory we could potentially
+                    // use.
+                    NSURL* vmKernelSnapshotURL = [NSURL URLWithString:@(kVMKernelSnapshotFileName)
+                                                        relativeToURL:[NSURL fileURLWithPath:assetsPath]];
+                    if ([[NSFileManager defaultManager] fileExistsAtPath:vmKernelSnapshotURL.path]) {
+                        _settings.kernel_snapshot_path = vmKernelSnapshotURL.path.UTF8String;
+#if DEBUG
+                        NSLog(@"vmKernelSnapshotURL.path.:%@",vmKernelSnapshotURL.path.UTF8String);
+#endif
+                    }
+                }
+                
+                {
+                    // Check if there is an application kernel snapshot in the assets directory we could
+                    // potentially use.
+                    NSURL* applicationKernelSnapshotURL =
+                    [NSURL URLWithString:@(kApplicationKernelSnapshotFileName)
+                           relativeToURL:[NSURL fileURLWithPath:assetsPath]];
+                    if ([[NSFileManager defaultManager] fileExistsAtPath:applicationKernelSnapshotURL.path]) {
+                        _settings.application_kernel_asset = applicationKernelSnapshotURL.path.UTF8String;
+#if DEBUG
+                        NSLog(@" applicationKernelSnapshotURL.path.UTF8String:%@", applicationKernelSnapshotURL.path.UTF8String);
+#endif
+                    }
+                }
+            }
+        }
+       
+
+    }
+    
+    return self;
+}
+
+
 - (instancetype)initWithFlutterAssets:(NSURL*)flutterAssetsURL
                              dartMain:(NSURL*)dartMainURL
                              packages:(NSURL*)dartPackages {

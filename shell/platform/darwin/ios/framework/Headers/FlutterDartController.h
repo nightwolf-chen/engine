@@ -11,6 +11,10 @@
  * Provide some dart api interface.
  */
 
-@interface FlutterDartController : NSObject
+@interface FlutterDartVMController : NSObject
+
+- (BOOL)loadScript:(NSString *)scrpitSource url:(NSString *)url;
+
++ (instancetype)sharedDartController;
 
 @end

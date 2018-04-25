@@ -62,7 +62,6 @@
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
 
   if (self) {
-    _platformViewStatus = PlatformView_Status_Initial;
     if (project == nil)
       _dartProject.reset([[FlutterDartProject alloc] initFromDefaultSourceForConfiguration]);
     else
@@ -380,18 +379,13 @@
 
 - (void)surfaceUpdated:(BOOL)appeared {
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
-  if (appeared) {
-      
-    if(_platformViewStatus != PlatformView_Status_Created){
-        _platformView->NotifyCreated();
-        _platformViewStatus = PlatformView_Status_Created;
+    if (appeared) {
+        [self installLaunchViewCallback];
+        _shell->GetPlatformView()->NotifyCreated();
+        
+    } else {
+        _shell->GetPlatformView()->NotifyDestroyed();
     }
-  } else {
-    if(_platformViewStatus == PlatformView_Status_Created){
-        _platformView->NotifyDestroyed();
-        _platformViewStatus = PlatformView_Status_Destoryed;
-    }
-  }
     
 }
 

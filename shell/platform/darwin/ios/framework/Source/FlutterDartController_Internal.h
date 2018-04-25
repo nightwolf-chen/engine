@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface FlutterDartController(Internal)
-
-@end
+//@interface FlutterDartVMController(Internal)
+//
+//
+//@end
