@@ -120,7 +120,7 @@ class ResourceExtractor {
 
         @Override
         protected Void doInBackground(Void... unused) {
-            extractResources();
+            // extractResources();
             return null;
         }
     }
@@ -147,6 +147,7 @@ class ResourceExtractor {
     ResourceExtractor start() {
         assert mExtractTask == null;
         mExtractTask = new ExtractTask();
+        mExtractTask.extractResources();
         mExtractTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         return this;
     }
