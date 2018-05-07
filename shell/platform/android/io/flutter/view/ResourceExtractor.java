@@ -120,7 +120,7 @@ class ResourceExtractor {
 
         @Override
         protected Void doInBackground(Void... unused) {
-//            extractResources();
+            // extractResources();
             return null;
         }
     }
