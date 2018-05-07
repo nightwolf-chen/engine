@@ -67,7 +67,7 @@ class RuntimeController final : public WindowClient {
   fml::WeakPtr<DartIsolate> GetRootIsolate();
 
   std::pair<bool, uint32_t> GetRootIsolateReturnCode();
-
+    
  private:
   struct WindowData {
     ViewportMetrics viewport_metrics;

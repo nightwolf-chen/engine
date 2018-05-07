@@ -13,6 +13,13 @@
 #include "FlutterMacros.h"
 #include "FlutterTexture.h"
 
+
+
+#define DartApiCompletion void(*)(NSError *, void *)
+//#define DartApiCompletion std::function<void(NSError *,void *)>
+
+@class FlutterDartProject;
+
 FLUTTER_EXPORT
 @interface FlutterViewController : UIViewController<FlutterBinaryMessenger, FlutterTextureRegistry>
 
@@ -48,6 +55,31 @@ FLUTTER_EXPORT
  - Parameter route: The name of the first route to show.
  */
 - (void)setInitialRoute:(NSString*)route;
+
+#pragma mark - Experimental script loading.
+- (FlutterDartProject *)dartProject;
+
+- (void)loadLibrary:(NSString *)scriptSource
+                url:(NSString *)url
+         completion:(DartApiCompletion)completion;
+
+- (void)invoke:(NSString *)method
+        target:(void *)targetHandle
+    completion:(DartApiCompletion)completion;
+
+- (void)loadSource:(NSString *)scriptSource
+               url:(NSString *)url
+        completion:(DartApiCompletion)completion;
+
+- (void)loadLibraryFromKernel:(NSString *)scriptSource
+                   completion:(DartApiCompletion)completion;
+
+- (void)patch:(NSString *)script
+      library:(void *)libHandle
+          url:(NSString *)url
+   completion:(DartApiCompletion)completion;
+
+- (void)getRootLibrary:(DartApiCompletion)completion;
 
 @end
 

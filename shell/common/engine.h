@@ -97,6 +97,8 @@ class Engine final : public blink::RuntimeDelegate {
 
   void ScheduleFrame(bool regenerate_layer_tree = true) override;
 
+  blink::RuntimeController * getRuntimeController();
+
  private:
   Engine::Delegate& delegate_;
   const blink::Settings settings_;

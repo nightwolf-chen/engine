@@ -419,5 +419,10 @@ void Engine::HandleAssetPlatformMessage(
     response->CompleteEmpty();
   }
 }
+    
+blink::RuntimeController* Engine::getRuntimeController(){
+    return runtime_controller_.get();
+}
+    
 
 }  // namespace shell

@@ -307,4 +307,16 @@ static blink::Settings DefaultSettingsForProcess() {
   return [self lookupKeyForAsset:[NSString stringWithFormat:@"packages/%@/%@", package, asset]];
 }
 
+#pragma mark - Script loading
+- (BOOL)loadScript:(NSString *)scrpitSource url:(NSString *)url
+{
+    
+//    blink::TaskRunners::GetUITaskRunner()-
+//    Dart_Handle scriptHandle = Dart_NewStringFromCString(scrpitSource.UTF8String);
+//    Dart_Handle urlHandle = Dart_NewStringFromCString(url.UTF8String);
+//    Dart_Handle ret = Dart_LoadScript(urlHandle, Dart_Null(), scriptHandle, 0, 0);
+//    return ret != NULL;
+    return NO;
+}
+
 @end

@@ -46,6 +46,9 @@ FLUTTER_EXPORT
  */
 + (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package;
 
+
+- (BOOL)loadScript:(NSString *)scrpitSource url:(NSString *)url;
+
 @end
 
 #endif  // FLUTTER_FLUTTERDARTPROJECT_H_

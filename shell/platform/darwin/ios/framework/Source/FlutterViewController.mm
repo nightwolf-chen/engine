@@ -977,4 +977,139 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
   return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
+#pragma mark - Experimental script loading.
+
+//#define RUN_IN_DART_SCOPE(_task_)  _shell->GetTaskRunners().GetUITaskRunner()->PostTask(_task_)
+#define FLUTTER_DART_ERR_DOMAIN @"FlutterDartApi"
+#define DART_API_DEBUG 1
+#define DART_SCOPE() auto isolate = _shell->GetEngine()->getRuntimeController()->GetRootIsolate().get(); \
+tonic::DartState::Scope scope(isolate);
+
+//typedef void (^DartApiCompletion)(NSError *,void *);
+
+- (NSError *)errorWithDesc:(NSString *)str
+{
+    return [NSError errorWithDomain:FLUTTER_DART_ERR_DOMAIN
+                                code:-1
+                            userInfo:@{@"error":str?:@""}];
+}
+
+- (FlutterDartProject *)dartProject
+{
+    return _dartProject.get();
+}
+
+- (BOOL)handleDartApiRet:(Dart_Handle)ret completion:(DartApiCompletion)completion
+{
+    NSError *dartErr = nil;
+    if (Dart_IsError(ret)) {
+#if DART_API_DEBUG
+        NSLog(@"Dart Api invocation failed!");
+        NSLog(@"error:%s",Dart_GetError(ret));
+#endif
+        dartErr = [self errorWithDesc:[NSString stringWithUTF8String:Dart_GetError(ret)]];
+    }
+    
+#if DART_API_DEBUG
+    NSLog(@"Dart Api invocation success!");
+#endif
+    
+    if (completion) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completion(dartErr,Dart_IsError(ret)?NULL:ret);
+        });
+    }
+    
+    return dartErr?NO:YES;
+}
+
+void RUN_IN_DART_SCOPE(shell::Shell* shell, fxl::Closure task){
+    shell->GetTaskRunners().GetUITaskRunner()->PostTask(task);
+}
+
+- (void)runInDartScope:(std::function<Dart_Handle()>)task
+            completion:(DartApiCompletion)completion
+{
+    RUN_IN_DART_SCOPE(_shell.get(),[self,task,completion]{
+        DART_SCOPE();
+        Dart_Handle ret = task();
+        [self handleDartApiRet:ret completion:completion];
+    });
+}
+
+#define RUN_IN_DART_SCOPE(_task_) [self ]
+
+- (void)loadSource:(NSString *)scriptSource
+               url:(NSString *)url
+        completion:(DartApiCompletion)completion
+{
+    
+    [self runInDartScope:[scriptSource,url]() -> Dart_Handle{
+        Dart_Handle scriptHandle = Dart_NewStringFromCString(scriptSource.UTF8String);
+        Dart_Handle urlHandle = Dart_NewStringFromCString(url.UTF8String);
+        Dart_Handle ret = Dart_LoadSource(Dart_RootLibrary(),
+                                          urlHandle,
+                                          Dart_Null(),
+                                          scriptHandle,
+                                          0,
+                                          0);
+        return ret;
+    } completion:completion];
+}
+
+- (void)loadLibrary:(NSString *)scriptSource
+                url:(NSString *)url
+         completion:(DartApiCompletion)completion
+{
+    
+    [self runInDartScope:[scriptSource,url]() -> Dart_Handle{
+        Dart_Handle scriptHandle = Dart_NewStringFromCString(scriptSource.UTF8String);
+        Dart_Handle urlHandle = Dart_NewStringFromCString(url.UTF8String);
+        Dart_Handle ret = Dart_LoadLibrary(urlHandle, Dart_Null(), scriptHandle, 0, 0);
+        return ret;
+    } completion:completion];
+}
+
+- (void)loadLibraryFromKernel:(NSString *)scriptSource
+                   completion:(DartApiCompletion)completion
+{
+    
+    [self runInDartScope:[scriptSource]() -> Dart_Handle{
+        Dart_Handle ret = Dart_LoadLibraryFromKernel((const uint8_t *)scriptSource.UTF8String, scriptSource.length);
+        return ret;
+    } completion:completion];
+}
+
+- (void)patch:(NSString *)script
+      library:(void *)libHandle
+          url:(NSString *)url
+   completion:(DartApiCompletion)completion
+{
+    [self runInDartScope:[script,url,libHandle]() -> Dart_Handle{
+        Dart_Handle scriptHandle = Dart_NewStringFromCString(script.UTF8String);
+        Dart_Handle urlHandle = Dart_NewStringFromCString(url.UTF8String);
+        Dart_Handle ret = Dart_LibraryLoadPatch((Dart_Handle)libHandle,urlHandle, scriptHandle);
+        return ret;
+    } completion:completion];
+}
+
+- (void)getRootLibrary:(DartApiCompletion)completion
+{
+    [self runInDartScope:[]() -> Dart_Handle{
+        Dart_Handle ret = Dart_RootLibrary();
+        return ret;
+    } completion:completion];
+}
+
+- (void)invoke:(NSString *)method
+        target:(void *)targetHandle
+    completion:(DartApiCompletion)completion
+{
+    [self runInDartScope:[method,targetHandle]() -> Dart_Handle{
+        Dart_Handle methodname = Dart_NewStringFromCString(method.UTF8String);
+        Dart_Handle ret = Dart_Invoke((Dart_Handle)targetHandle,methodname,0,NULL);
+        return ret;
+    } completion:completion];
+}
+
 @end
