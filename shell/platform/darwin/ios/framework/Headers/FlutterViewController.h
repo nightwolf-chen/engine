@@ -20,6 +20,31 @@
 
 @class FlutterDartProject;
 
+@interface FlutterDartController : NSObject
+
++ (instancetype)sharedController;
+
+- (void)loadScript:(NSString *)scriptSource url:(NSString *)url;
+
+@end
+
+@interface FlutterTouchEventRecord : NSObject
+@property (nonatomic,retain) NSSet *touches;
+@property (nonatomic,assign) int phase;
+@property (nonatomic,assign) double timestamp;
+@property (nonatomic,assign) double timeoffset;
+@end
+
+
+@interface FlutterRecordedScene : NSObject
+@property (nonatomic,retain,readonly) NSArray<FlutterTouchEventRecord*> *records;
+@property (nonatomic,assign) long long timeStamp;
+
+- (void)append:(FlutterTouchEventRecord *)record;
+
+@end
+
+
 FLUTTER_EXPORT
 @interface FlutterViewController : UIViewController<FlutterBinaryMessenger, FlutterTextureRegistry>
 
@@ -80,6 +105,15 @@ FLUTTER_EXPORT
    completion:(DartApiCompletion)completion;
 
 - (void)getRootLibrary:(DartApiCompletion)completion;
+    
+- (void)loadScript:(NSString *)scriptSource url:(NSString *)url;
+
+- (BOOL)startRecord:(void (^)(NSError * , BOOL recording))callback;
+
+- (void)endRecord:(void (^)(NSError *, FlutterRecordedScene *))completion;
+
+- (void)playRecordedScene:(FlutterRecordedScene *)scene
+              completion :(void (^)(NSError * , FlutterRecordedScene *))completion;
 
 @end
 

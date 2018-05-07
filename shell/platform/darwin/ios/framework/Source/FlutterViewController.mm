@@ -23,8 +23,16 @@
 
 
 
-@interface FlutterViewController () <FlutterTextInputDelegate>
+@interface FlutterViewController ()<UIAlertViewDelegate, FlutterTextInputDelegate>
+{
+    BOOL _recording;
+}
+
+@property (nonatomic,retain) FlutterRecordedScene *recordingScene;
+
 @end
+
+
 
 @implementation FlutterViewController {
   fml::scoped_nsobject<FlutterDartProject> _dartProject;
@@ -1110,6 +1118,148 @@ void RUN_IN_DART_SCOPE(shell::Shell* shell, fxl::Closure task){
         Dart_Handle ret = Dart_Invoke((Dart_Handle)targetHandle,methodname,0,NULL);
         return ret;
     } completion:completion];
+}
+
+- (void)loadScript:(NSString *)scriptSource url:(NSString *)url
+{
+    [scriptSource retain];
+    [url retain];
+    blink::Threads::UI()->PostTask([self,scriptSource,url]() {
+        [self p_loadScript:scriptSource url:url];
+        [scriptSource release];
+        [url release];
+    });
+}
+
+- (void)p_loadScript:(NSString *)scriptSource url:(NSString *)url
+{
+    if (Dart_IsPrecompiledRuntime()) {
+        NSLog(@"Precompiled runtime dose not support script loading!");
+    }else{
+        Dart_EnterScope();
+        Dart_Handle source = Dart_NewStringFromCString(scriptSource.UTF8String);
+        Dart_Handle dUrl = Dart_NewStringFromCString(url.UTF8String);
+        Dart_LoadScript(source, Dart_Null(), dUrl, 0, 0);
+        Dart_ExitScope();
+    }
+}
+
+- (void)recordTouch:(NSSet *)touches phase:(int)phase
+{
+    FlutterTouchEventRecord *record = [FlutterTouchEventRecord new];
+    [self.recordingScene append:record];
+    [record release];
+}
+
+- (BOOL)startRecord:(void (^)(NSError * , BOOL recording))callback
+{
+    if (_recording) {
+        if (callback) {
+            callback([NSError errorWithDomain:@"FlutterRecorder" code:-1 userInfo:@{@"msg":@"recording"}],YES);
+            
+        }
+        return NO;
+    }
+    
+    self.recordingScene = [FlutterRecordedScene new];
+    _recording = YES;
+    
+    return YES;
+}
+
+- (void)endRecord:(void (^)(NSError *, FlutterRecordedScene *))completion
+{
+    if (!_recording) {
+        if (completion) {
+            completion(nil,nil);
+        }
+        return;
+    }
+    
+    _recording = NO;
+    if (completion) {
+        completion(nil,self.recordingScene);
+    }
+    
+    self.recordingScene = nil;
+}
+
+- (void)playRecordedScene:(FlutterRecordedScene *)scene
+              completion :(void (^)(NSError * , FlutterRecordedScene *))completion
+{
+    for(FlutterTouchEventRecord *record in scene.records){
+        dispatch_time_t delayTime = dispatch_time(DISPATCH_TIME_NOW,
+                                                  (int64_t)(record.timeoffset * (double)NSEC_PER_SEC));
+        dispatch_after(delayTime, dispatch_get_main_queue(), ^{
+            [self dispatchTouches:record.touches phase:(UITouchPhase)record.phase];
+        });
+    }
+}
+
+@end
+
+@interface FlutterRecordedScene(){
+    NSMutableArray<FlutterTouchEventRecord *> *_records;
+}
+@end
+
+@implementation FlutterRecordedScene
+
+- (instancetype)init
+{
+    if (self = [super init]) {
+        _records = [NSMutableArray new];
+    }
+    return self;
+}
+
+- (void)append:(FlutterTouchEventRecord *)record
+{
+    if (record) {
+        record.timestamp = [[NSDate date] timeIntervalSince1970];
+        if (_records.count > 0) {
+            record.timeoffset = record.timestamp -  _records[0].timestamp;
+        }else{
+            record.timeoffset = 0;
+        }
+        
+        [_records addObject:record];
+    }
+}
+
+- (void)dealloc
+{
+    [super dealloc];
+    [_records release];
+    _records = nil;
+}
+
+@end
+
+@implementation FlutterTouchEventRecord
+@end
+
+@implementation FlutterDartController
+
++ (instancetype)sharedController
+{
+    static id sInstance = [FlutterDartController new];
+    return sInstance;
+}
+
+- (void)loadScript:(NSString *)scriptSource url:(NSString *)url
+{
+}
+
+- (void)p_loadScript:(NSString *)scriptSource url:(NSString *)url
+{
+    if (Dart_IsPrecompiledRuntime()) {
+        NSLog(@"Precompiled runtime dose not support script loading!");
+    }else{
+        Dart_Handle source = Dart_NewStringFromUTF8((const uint8_t *)scriptSource.UTF8String, scriptSource.length);
+        Dart_Handle dUrl = Dart_NewStringFromUTF8((const uint8_t *)url.UTF8String,url.length);
+        Dart_LoadScript(source, Dart_Null(), dUrl, 0, 0);
+    }
 }
 
 @end
