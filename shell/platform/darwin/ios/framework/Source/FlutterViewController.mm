@@ -517,6 +517,11 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   //
   // TODO(cbracken) consider creating out own class with the touch fields we
   // need.
+    
+    if(_recording){
+        [self recordTouch:touches phase:phase];
+    }
+    
   auto eventTypePhase = PointerChangePhaseFromUITouchPhase(phase);
   const CGFloat scale = [UIScreen mainScreen].scale;
   auto packet = std::make_unique<blink::PointerDataPacket>(touches.count);
@@ -1122,13 +1127,13 @@ void RUN_IN_DART_SCOPE(shell::Shell* shell, fxl::Closure task){
 
 - (void)loadScript:(NSString *)scriptSource url:(NSString *)url
 {
-    [scriptSource retain];
-    [url retain];
-    blink::Threads::UI()->PostTask([self,scriptSource,url]() {
-        [self p_loadScript:scriptSource url:url];
-        [scriptSource release];
-        [url release];
-    });
+//    [scriptSource retain];
+//    [url retain];
+//    blink::Threads::UI()->PostTask([self,scriptSource,url]() {
+//        [self p_loadScript:scriptSource url:url];
+//        [scriptSource release];
+//        [url release];
+//    });
 }
 
 - (void)p_loadScript:(NSString *)scriptSource url:(NSString *)url
@@ -1147,6 +1152,8 @@ void RUN_IN_DART_SCOPE(shell::Shell* shell, fxl::Closure task){
 - (void)recordTouch:(NSSet *)touches phase:(int)phase
 {
     FlutterTouchEventRecord *record = [FlutterTouchEventRecord new];
+    record.touches = touches;
+    record.phase = phase;
     [self.recordingScene append:record];
     [record release];
 }
@@ -1188,10 +1195,18 @@ void RUN_IN_DART_SCOPE(shell::Shell* shell, fxl::Closure task){
               completion :(void (^)(NSError * , FlutterRecordedScene *))completion
 {
     for(FlutterTouchEventRecord *record in scene.records){
-        dispatch_time_t delayTime = dispatch_time(DISPATCH_TIME_NOW,
-                                                  (int64_t)(record.timeoffset * (double)NSEC_PER_SEC));
-        dispatch_after(delayTime, dispatch_get_main_queue(), ^{
-            [self dispatchTouches:record.touches phase:(UITouchPhase)record.phase];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
+                                     (int64_t)(record.timeoffset * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+                           
+                NSLog(@"dispatch touch with phase=%d with offset=%lf",
+                      record.phase,
+                      record.timeoffset * NSEC_PER_SEC);
+                [self dispatchTouches:record.touches
+                                phase:(UITouchPhase)record.phase];
+                           if(record == scene.records.lastObject && completion){
+                               completion(nil,scene);
+                           }
         });
     }
 }
