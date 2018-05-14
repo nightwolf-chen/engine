@@ -669,16 +669,23 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 // Updates _viewportMetrics physical padding.
 //
 // Viewport padding represents the iOS safe area insets.
+- (UIEdgeInsets)paddingEdgeInsets{
+    UIEdgeInsets edgeInsets = UIEdgeInsetsZero;
+    if (@available(iOS 11, *)) {
+        edgeInsets = self.view.safeAreaInsets;
+    } else {
+        edgeInsets = UIEdgeInsetsMake([self statusBarPadding],0,0,0);
+    }
+    return edgeInsets;
+}
+    
 - (void)updateViewportPadding {
-  CGFloat scale = [UIScreen mainScreen].scale;
-  if (@available(iOS 11, *)) {
-    _viewportMetrics.physical_padding_top = self.view.safeAreaInsets.top * scale;
-    _viewportMetrics.physical_padding_left = self.view.safeAreaInsets.left * scale;
-    _viewportMetrics.physical_padding_right = self.view.safeAreaInsets.right * scale;
-    _viewportMetrics.physical_padding_bottom = self.view.safeAreaInsets.bottom * scale;
-  } else {
-    _viewportMetrics.physical_padding_top = [self statusBarPadding] * scale;
-  }
+    UIEdgeInsets edgeInsets = [self paddingEdgeInsets];
+    CGFloat scale = [UIScreen mainScreen].scale;
+    _viewportMetrics.physical_padding_top = edgeInsets.top * scale;
+    _viewportMetrics.physical_padding_left = edgeInsets.left * scale;
+    _viewportMetrics.physical_padding_right = edgeInsets.right * scale;
+    _viewportMetrics.physical_padding_bottom = edgeInsets.bottom * scale;
 }
 
 #pragma mark - Keyboard events

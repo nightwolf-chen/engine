@@ -49,6 +49,7 @@ FLUTTER_EXPORT
  */
 - (void)setInitialRoute:(NSString*)route;
 
+- (UIEdgeInsets)paddingEdgeInsets;
 @end
 
 #endif  // FLUTTER_FLUTTERVIEWCONTROLLER_H_
