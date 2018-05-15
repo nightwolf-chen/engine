@@ -40,6 +40,10 @@ bool TaskRunner::RunsTasksOnCurrentThread() {
   }
   return MessageLoop::GetCurrent().GetLoopImpl() == loop_;
 }
+    
+void TaskRunner::EnableMessageLoop(bool isEnable){
+    loop_->EnableMessageLoop(isEnable);
+}
 
 void TaskRunner::RunNowOrPostTask(fxl::RefPtr<fxl::TaskRunner> runner,
                                   fxl::Closure task) {

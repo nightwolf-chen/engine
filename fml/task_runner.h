@@ -22,7 +22,7 @@ class TaskRunner final : public fxl::TaskRunner {
   void PostDelayedTask(fxl::Closure task, fxl::TimeDelta delay) override;
 
   bool RunsTasksOnCurrentThread() override;
-
+  void EnableMessageLoop(bool isEnable);
   static void RunNowOrPostTask(fxl::RefPtr<fxl::TaskRunner> runner,
                                fxl::Closure task);
 
