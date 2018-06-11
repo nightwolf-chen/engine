@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include "lib/fxl/logging.h"
 
 #include "flutter/flow/layers/performance_overlay_layer.h"
 
@@ -54,6 +55,7 @@ void VisualizeStopWatch(SkCanvas& canvas,
     stream << label_prefix << "  " << fps << " fps  " << ms_per_frame
            << "ms/frame";
     DrawStatisticsText(canvas, stream.str(), x + label_x, y + height + label_y);
+    FXL_LOG(ERROR)<<stream.str();
   }
 }
 
