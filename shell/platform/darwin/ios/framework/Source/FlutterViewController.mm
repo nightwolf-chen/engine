@@ -50,6 +50,7 @@
   shell::TouchMapper _touchMapper;
   int64_t _nextTextureId;
   BOOL _initialized;
+  BOOL _gpuOperationDisabled;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -433,29 +434,44 @@
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
+  [self enableMessageLoop:true forTaskRunner:@"io.flutter.gpu"];
+  [self enableMessageLoop:true forTaskRunner:@"io.flutter.io"];
+  if (_viewportMetrics.physical_width)
+        [self surfaceUpdated:YES];
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.resumed"];
+  _gpuOperationDisabled = FALSE;
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
+  [self disableGPUOperation];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
+  [self disableGPUOperation];
+}
+
+- (void)applicationWillEnterForeground:(NSNotification*)notification {
+    TRACE_EVENT0("flutter", "applicationWillEnterForeground");
+    [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
+}
+
+- (void)disableGPUOperation{
+  if(_gpuOperationDisabled == TRUE)
+      return;
   [self surfaceUpdated:NO];
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
   [self enableMessageLoop:false forTaskRunner:@"io.flutter.io"];
   [self enableMessageLoop:false forTaskRunner:@"io.flutter.gpu"];
-}
-
-- (void)applicationWillEnterForeground:(NSNotification*)notification {
-  TRACE_EVENT0("flutter", "applicationWillEnterForeground");
-  [self enableMessageLoop:true forTaskRunner:@"io.flutter.gpu"];
-  [self enableMessageLoop:true forTaskRunner:@"io.flutter.io"];
-  if (_viewportMetrics.physical_width)
-    [self surfaceUpdated:YES];
-  [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
+  _gpuOperationDisabled = TRUE;
+  //暂时通过延时来等待GL操作结束(否则进入后台后的GL操作会闪退)
+  int i = 0;
+  while(i++ < 6){
+      NSDate *maxDate = [NSDate dateWithTimeIntervalSinceNow:0.1];
+      [[NSRunLoop currentRunLoop] runUntilDate:maxDate];
+  }
 }
 
 - (void)enableMessageLoop:(bool)isEnable forTaskRunner:(NSString *)aTaskRunnerId{
