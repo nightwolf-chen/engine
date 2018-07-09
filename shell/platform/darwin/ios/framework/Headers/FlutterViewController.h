@@ -50,6 +50,15 @@ FLUTTER_EXPORT
 - (void)setInitialRoute:(NSString*)route;
 
 - (UIEdgeInsets)paddingEdgeInsets;
+
+
+
+typedef void (^DartApiCompletion)(NSError *,void *);
+/*
+ * Trigle memory warning for dart.
+ * */
+- (void)notifyMemoryWarning:(DartApiCompletion)completion;
+
 @end
 
 #endif  // FLUTTER_FLUTTERVIEWCONTROLLER_H_
