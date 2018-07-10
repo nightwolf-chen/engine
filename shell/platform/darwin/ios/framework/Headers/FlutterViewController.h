@@ -55,9 +55,13 @@ FLUTTER_EXPORT
 
 typedef void (^DartApiCompletion)(NSError *,void *);
 /*
- * Trigle memory warning for dart.
+ * Trigger memory warning for dart.
  * */
 - (void)notifyMemoryWarning:(DartApiCompletion)completion;
+
+/*
+ * Trigger idle*/
+- (void)notifyIdle:(DartApiCompletion)completion;
 
 @end
 

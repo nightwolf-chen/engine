@@ -21,6 +21,9 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+
+#include "vm/os.h"
+
 @interface FlutterViewController () <FlutterTextInputDelegate>
 @end
 
@@ -1039,6 +1042,8 @@ tonic::DartState::Scope scope(isolate);
 
 - (BOOL)handleDartApiRet:(Dart_Handle)ret completion:(DartApiCompletion)completion
 {
+    if(ret == NULL) return YES;
+
     NSError *dartErr = nil;
     if (Dart_IsError(ret)) {
 #if DART_API_DEBUG
@@ -1101,18 +1106,24 @@ DART_EXPORT void Dart_NotifyIdle(int64_t deadline);
 DART_EXPORT void Dart_NotifyLowMemory(); *
  */
 
+#define FLAG_idle_duration_micros 500
+
 - (void)notifyIdle:(DartApiCompletion)completion
 {
-//    [self runInDartScope:[]() -> Dart_Handle{
-//        Dart_Handle ret = Dart_;
-//        return ret;
-//    } completion:completion];
+    [self runInDartScope:[]() -> Dart_Handle{
+        const int64_t now = dart::OS::GetCurrentMonotonicMicros();
+        Dart_Handle ret = NULL;
+        const int64_t deadline = now + FLAG_idle_duration_micros;
+        Dart_NotifyIdle(deadline);
+        return ret;
+    } completion:completion];
 }
 
-- (void)notifyMemeoryWarning:(DartApiCompletion)completion
+- (void)notifyMemoryWarning:(DartApiCompletion)completion
 {
     [self runInDartScope:[]() -> Dart_Handle{
         Dart_NotifyLowMemory();
+        return NULL;
     } completion:completion];
 }
 
